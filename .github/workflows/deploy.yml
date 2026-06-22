@@ -91,9 +91,13 @@ jobs:
       - name: Deploy Applications
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          echo "Simulating Vercel cloud deployment..."
-          # In a real environment, you would use CLI commands like:
-          # npx vercel --token $VERCEL_TOKEN --prod
-          echo "Deployment simulated successfully."
+          echo "Deploying to Vercel..."
+          # Extract NEWS_API_AI_KEY from the decrypted .env file
+          NEWS_API_AI_KEY=$(grep '^NEWS_API_AI_KEY=' .env | cut -d '=' -f2- | tr -d "'\"")
+          npx vercel --prod --token=$VERCEL_TOKEN --yes --env NEWS_API_AI_KEY="$NEWS_API_AI_KEY" --build-env VITE_PROJECT_NAME="The Chronicle"
+
+
 
