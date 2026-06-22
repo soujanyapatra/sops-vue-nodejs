@@ -50,61 +50,50 @@ jobs:
           echo "${{ secrets.AGE_PRIVATE_KEY }}" > ~/.config/sops/age/keys.txt
           chmod 600 ~/.config/sops/age/keys.txt
 
-      # Step 6: Decrypt the secrets file and generate the backend .env configuration
+      # Step 6: Decrypt the secrets file and generate the root .env configuration
       - name: Decrypt secrets.enc.yaml
         run: |
-          echo "Decrypting secrets to backend/.env..."
-          sops --decrypt secrets/secrets.enc.yaml > backend/.env
-          # Verify that backend/.env is created and not empty (without printing its contents!)
-          if [ -s backend/.env ]; then
-            echo "Successfully decrypted secrets to backend/.env"
+          echo "Decrypting secrets to .env..."
+          sops --decrypt secrets/secrets.enc.yaml > .env
+          # Verify that .env is created and not empty (without printing its contents!)
+          if [ -s .env ]; then
+            echo "Successfully decrypted secrets to .env"
           else
             echo "Decryption failed or resulting file is empty"
             exit 1
           fi
 
-      # Step 7: Install package dependencies in all directories
+      # Step 7: Install package dependencies
       - name: Install Dependencies
         run: |
-          echo "Installing root, backend and frontend dependencies..."
-          npm install
-          cd backend && npm install
-          cd ../frontend && npm install --legacy-peer-deps
+          echo "Installing root and frontend dependencies..."
+          npm run install-all
 
       # Step 8: Run Lint (TypeScript syntax checks)
       - name: Run Lint
         run: |
           echo "Running typechecks and quality gates..."
-          cd backend && npm run lint
-          cd ../frontend && npm run lint
+          npm run lint
 
-      # Step 9: Run Test suites (Backend Jest & Frontend Vitest)
+      # Step 9: Run Test suites (Frontend Vitest)
       - name: Run Tests
         run: |
           echo "Executing test suites..."
-          cd backend && npm run test
-          cd ../frontend && npm run test
+          npm run test
 
       # Step 10: Build Frontend static assets
       - name: Build Frontend
         run: |
           echo "Building Vue 3 + TS static files..."
-          cd frontend && npm run build
+          npm run build
 
-      # Step 11: Build Backend TypeScript source
-      - name: Build Backend
-        run: |
-          echo "Compiling Node.js Express TypeScript..."
-          cd backend && npm run build
-
-      # Step 12: Deploy Frontend to Vercel and Backend to Railway/Render
+      # Step 11: Deploy Frontend and Serverless Functions to Vercel
       - name: Deploy Applications
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          # RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
-          echo "Simulating Vercel and backend cloud deployments..."
+          echo "Simulating Vercel cloud deployment..."
           # In a real environment, you would use CLI commands like:
           # npx vercel --token $VERCEL_TOKEN --prod
-          # npx @railway/cli upload
           echo "Deployment simulated successfully."
+
