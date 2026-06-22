@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    # Load environment variables decrypted from SOPS
+    env_file:
+      - backend/.env
+    environment:
+      - PORT=3000
+      - ENVIRONMENT=docker-development
+      - BUILD_VERSION=1.0.0-docker
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend

@@ -1,0 +1,110 @@
+name: Decrypt and Deploy CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the repository code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Node.js environment
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # Step 3: Install Mozilla SOPS binary
+      - name: Install SOPS
+        run: |
+          SOPS_VER="v3.9.0"
+          echo "Downloading SOPS $SOPS_VER..."
+          curl -LO "https://github.com/getsops/sops/releases/download/${SOPS_VER}/sops-${SOPS_VER}.linux.amd64"
+          sudo mv sops-${SOPS_VER}.linux.amd64 /usr/local/bin/sops
+          sudo chmod +x /usr/local/bin/sops
+          sops --version
+
+      # Step 4: Install AGE Cryptography tool
+      - name: Install AGE
+        run: |
+          echo "Installing AGE tool..."
+          sudo apt-get update && sudo apt-get install -y age
+          age --version
+
+      # Step 5: Restore AGE Private Key from GitHub Secrets
+      - name: Restore AGE Private Key
+        run: |
+          echo "Restoring SOPS/AGE private key..."
+          mkdir -p ~/.config/sops/age
+          # Write the private key from GitHub Secrets to the default SOPS AGE keys location
+          echo "${{ secrets.AGE_PRIVATE_KEY }}" > ~/.config/sops/age/keys.txt
+          chmod 600 ~/.config/sops/age/keys.txt
+
+      # Step 6: Decrypt the secrets file and generate the backend .env configuration
+      - name: Decrypt secrets.enc.yaml
+        run: |
+          echo "Decrypting secrets to backend/.env..."
+          sops --decrypt secrets/secrets.enc.yaml > backend/.env
+          # Verify that backend/.env is created and not empty (without printing its contents!)
+          if [ -s backend/.env ]; then
+            echo "Successfully decrypted secrets to backend/.env"
+          else
+            echo "Decryption failed or resulting file is empty"
+            exit 1
+          fi
+
+      # Step 7: Install package dependencies in all directories
+      - name: Install Dependencies
+        run: |
+          echo "Installing root, backend and frontend dependencies..."
+          npm install
+          cd backend && npm install
+          cd ../frontend && npm install --legacy-peer-deps
+
+      # Step 8: Run Lint (TypeScript syntax checks)
+      - name: Run Lint
+        run: |
+          echo "Running typechecks and quality gates..."
+          cd backend && npm run lint
+          cd ../frontend && npm run lint
+
+      # Step 9: Run Test suites (Backend Jest & Frontend Vitest)
+      - name: Run Tests
+        run: |
+          echo "Executing test suites..."
+          cd backend && npm run test
+          cd ../frontend && npm run test
+
+      # Step 10: Build Frontend static assets
+      - name: Build Frontend
+        run: |
+          echo "Building Vue 3 + TS static files..."
+          cd frontend && npm run build
+
+      # Step 11: Build Backend TypeScript source
+      - name: Build Backend
+        run: |
+          echo "Compiling Node.js Express TypeScript..."
+          cd backend && npm run build
+
+      # Step 12: Deploy Frontend to Vercel and Backend to Railway/Render
+      - name: Deploy Applications
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          # RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          echo "Simulating Vercel and backend cloud deployments..."
+          # In a real environment, you would use CLI commands like:
+          # npx vercel --token $VERCEL_TOKEN --prod
+          # npx @railway/cli upload
+          echo "Deployment simulated successfully."
