@@ -1,0 +1,69 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import axios from 'axios';
+import { 
+  setCorsHeaders, 
+  NEWS_API_URL, 
+  MOCK_NEWS_DATABASE, 
+  mapExternalArticles 
+} from '../_utils/news';
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  setCorsHeaders(res);
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  const apiKey = process.env.NEWS_API_AI_KEY;
+  const query = (req.query.q as string) || '';
+
+  if (!query) {
+    return res.status(400).json({ error: 'Search query parameter "q" is required' });
+  }
+
+  if (!apiKey) {
+    const filteredMock = MOCK_NEWS_DATABASE.filter(
+      item => item.title.toLowerCase().includes(query.toLowerCase()) || 
+              item.description.toLowerCase().includes(query.toLowerCase())
+    );
+    return res.status(200).json({
+      articles: filteredMock.length > 0 ? filteredMock : MOCK_NEWS_DATABASE,
+      fetchedFrom: 'Local Fallback (NEWS_API_AI_KEY Missing)',
+      secretLoaded: false
+    });
+  }
+
+  try {
+    const response = await axios.post(NEWS_API_URL, {
+      action: "getArticles",
+      lang: "eng",
+      keyword: query,
+      articlesCount: 15,
+      articlesSortBy: "date",
+      articlesSortByAsc: false,
+      apiKey: apiKey
+    }, {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 8000
+    });
+
+    const results = response.data?.articles?.results || [];
+    const mapped = mapExternalArticles(results, 'General');
+
+    return res.status(200).json({
+      articles: mapped,
+      fetchedFrom: 'Real NewsAPI.ai Service via Secure Proxy',
+      secretLoaded: true
+    });
+  } catch (error: any) {
+    console.error('Error searching news:', error.message);
+    const filteredMock = MOCK_NEWS_DATABASE.filter(
+      item => item.title.toLowerCase().includes(query.toLowerCase()) || 
+              item.description.toLowerCase().includes(query.toLowerCase())
+    );
+    return res.status(200).json({
+      articles: filteredMock,
+      fetchedFrom: `Local Fallback (Network error: ${error.message})`,
+      secretLoaded: true
+    });
+  }
+}

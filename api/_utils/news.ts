@@ -1,16 +1,6 @@
-import express from 'express';
-import cors from 'cors';
-import axios from 'axios';
+// Shared helper library for news api routes
 
-const app = express();
-
-app.use(cors());
-app.use(express.json());
-
-const NEWS_API_URL = 'https://eventregistry.org/api/v1/article/getArticles';
-
-// Standard Article Interface returned to frontend
-interface Article {
+export interface Article {
   id: string;
   title: string;
   description: string;
@@ -23,11 +13,12 @@ interface Article {
   category: string;
 }
 
-// Category list
-const CATEGORIES = ["Technology", "Business", "AI", "World", "Sports"];
+export const CATEGORIES = ["Technology", "Business", "AI", "World", "Sports"];
+
+export const NEWS_API_URL = 'https://eventregistry.org/api/v1/article/getArticles';
 
 // High-quality Mock Articles Database (Fallback)
-const MOCK_NEWS_DATABASE: Article[] = [
+export const MOCK_NEWS_DATABASE: Article[] = [
   // AI Category
   {
     id: "mock-ai-1",
@@ -111,7 +102,7 @@ const MOCK_NEWS_DATABASE: Article[] = [
     id: "mock-world-1",
     title: "Global Climate Summit Reaches Landmark Energy Agreement",
     description: "Delegates from over 180 countries sign a pact to triple renewable energy capacity and phase down fossil fuel subsidies by 2035.",
-    content: "In a historic session, international climate negotiators concluded terms on a global energy reform treaty. The deal outlines binding benchmarks to scale up wind, solar, and geothermal power grids globally, alongside target reductions in fossil fuel financing. Developing nations will receive structural financial support to ensure equitable transitions to clean energy.",
+    content: "In a historic session, international climate negotiators concluded terms on a global energy treaty. The deal outlines binding benchmarks to scale up wind, solar, and geothermal power grids globally, alongside target reductions in fossil fuel financing. Developing nations will receive structural financial support to ensure equitable transitions to clean energy.",
     url: "https://example.com/climate-summit-landmark-treaty",
     image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&auto=format&fit=crop&q=60",
     source: "Global Newsroom",
@@ -125,7 +116,7 @@ const MOCK_NEWS_DATABASE: Article[] = [
     id: "mock-sports-1",
     title: "Championship Finals: Underdog Team Claims Victory",
     description: "A dramatic 90th-minute goal seals a historic championship win for the league's lowest-budget club.",
-    content: "It was a night that will go down in sporting history. Overcoming all odds, the league underdogs secured the championship cup in a thrilling final match. The team's defensive discipline combined with a spectacular counter-attack in the final minutes allowed them to break the stalemate, sparking emotional celebrations across their home city.",
+    content: "It was a night that will go down in sporting history. Overcoming all odds, the league underdogs secured the championship cup in a thrilling final match. The team's defensive discipline combined with a spectacular counter-attack in the final minutes allowed them to break the stalemate, spiking emotional celebrations across their home city.",
     url: "https://example.com/underdog-championship-victory",
     image: "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800&auto=format&fit=crop&q=60",
     source: "SportsNetwork",
@@ -136,22 +127,19 @@ const MOCK_NEWS_DATABASE: Article[] = [
 ];
 
 // Helper: Map NewsAPI.ai (Event Registry) response structure to standard Article format
-const mapExternalArticles = (results: any[], defaultCategory: string): Article[] => {
+export const mapExternalArticles = (results: any[], defaultCategory: string): Article[] => {
   if (!Array.isArray(results)) return [];
   
   return results.map((item: any) => {
-    // Slicing body content to create description if body is present
     const bodyStr = typeof item.body === 'string' ? item.body : '';
     let description = bodyStr.slice(0, 160);
     if (bodyStr.length > 160) description += '...';
 
-    // Get author
     let author = 'Staff Writer';
     if (Array.isArray(item.authors) && item.authors.length > 0) {
       author = item.authors[0].name || item.authors[0].uri || 'Staff Writer';
     }
 
-    // Unsplash Category Placeholders in case article has no image
     let defaultImg = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&auto=format&fit=crop&q=60';
     if (defaultCategory.toLowerCase() === 'ai') {
       defaultImg = 'https://images.unsplash.com/photo-1677442136019-21780efad99a?w=800&auto=format&fit=crop&q=60';
@@ -178,181 +166,13 @@ const mapExternalArticles = (results: any[], defaultCategory: string): Article[]
   });
 };
 
-// GET /api/health
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok' });
-});
-
-// GET /api/categories
-app.get('/api/categories', (req, res) => {
-  res.json(CATEGORIES);
-});
-
-// GET /api/secret-status
-app.get('/api/secret-status', (req, res) => {
-  const apiKey = process.env.NEWS_API_AI_KEY;
-  const environment = process.env.ENVIRONMENT || 'development';
-  const buildVersion = process.env.BUILD_VERSION || '1.0.0';
-  const deploymentTime = process.env.DEPLOYMENT_TIME || new Date().toISOString();
-
-  res.json({
-    secretLoaded: typeof apiKey === 'string' && apiKey.length > 0,
-    environment,
-    buildVersion,
-    deploymentTime
-  });
-});
-
-// GET /api/news - Get latest general news
-app.get('/api/news', async (req, res) => {
-  const apiKey = process.env.NEWS_API_AI_KEY;
-  const category = (req.query.category as string) || 'World';
-
-  if (!apiKey) {
-    // Graceful fallback to mock data
-    const filteredMock = MOCK_NEWS_DATABASE.filter(
-      item => item.category.toLowerCase() === category.toLowerCase()
-    );
-    return res.json({
-      articles: filteredMock.length > 0 ? filteredMock : MOCK_NEWS_DATABASE,
-      fetchedFrom: 'Local Fallback (NEWS_API_AI_KEY Missing)',
-      secretLoaded: false
-    });
-  }
-
-  try {
-    const response = await axios.post(NEWS_API_URL, {
-      action: "getArticles",
-      lang: "eng",
-      keyword: category,
-      articlesCount: 15,
-      articlesSortBy: "date",
-      articlesSortByAsc: false,
-      apiKey: apiKey
-    }, {
-      headers: { 'Content-Type': 'application/json' },
-      timeout: 8000
-    });
-
-    const results = response.data?.articles?.results || [];
-    const mapped = mapExternalArticles(results, category);
-
-    res.json({
-      articles: mapped.length > 0 ? mapped : MOCK_NEWS_DATABASE.filter(item => item.category.toLowerCase() === category.toLowerCase()),
-      fetchedFrom: 'Real NewsAPI.ai Service via Secure Proxy',
-      secretLoaded: true
-    });
-  } catch (error: any) {
-    console.error('Error calling NewsAPI.ai:', error.message);
-    const filteredMock = MOCK_NEWS_DATABASE.filter(
-      item => item.category.toLowerCase() === category.toLowerCase()
-    );
-    res.json({
-      articles: filteredMock.length > 0 ? filteredMock : MOCK_NEWS_DATABASE,
-      fetchedFrom: `Local Fallback (Network error: ${error.message})`,
-      secretLoaded: true
-    });
-  }
-});
-
-// GET /api/news/trending - Get trending news sorted by source importance / social score
-app.get('/api/news/trending', async (req, res) => {
-  const apiKey = process.env.NEWS_API_AI_KEY;
-
-  if (!apiKey) {
-    return res.json({
-      articles: MOCK_NEWS_DATABASE.slice(0, 5),
-      fetchedFrom: 'Local Fallback (NEWS_API_AI_KEY Missing)',
-      secretLoaded: false
-    });
-  }
-
-  try {
-    const response = await axios.post(NEWS_API_URL, {
-      action: "getArticles",
-      lang: "eng",
-      articlesCount: 6,
-      articlesSortBy: "socialScore", // Sort by social engagement for trending
-      articlesSortByAsc: false,
-      apiKey: apiKey
-    }, {
-      headers: { 'Content-Type': 'application/json' },
-      timeout: 8000
-    });
-
-    const results = response.data?.articles?.results || [];
-    const mapped = mapExternalArticles(results, 'World');
-
-    res.json({
-      articles: mapped.length > 0 ? mapped : MOCK_NEWS_DATABASE.slice(0, 5),
-      fetchedFrom: 'Real NewsAPI.ai Service via Secure Proxy',
-      secretLoaded: true
-    });
-  } catch (error: any) {
-    console.error('Error fetching trending news:', error.message);
-    res.json({
-      articles: MOCK_NEWS_DATABASE.slice(0, 5),
-      fetchedFrom: `Local Fallback (Network error: ${error.message})`,
-      secretLoaded: true
-    });
-  }
-});
-
-// GET /api/news/search - Search articles by query
-app.get('/api/news/search', async (req, res) => {
-  const apiKey = process.env.NEWS_API_AI_KEY;
-  const query = (req.query.q as string) || '';
-
-  if (!query) {
-    return res.status(400).json({ error: 'Search query parameter "q" is required' });
-  }
-
-  if (!apiKey) {
-    const filteredMock = MOCK_NEWS_DATABASE.filter(
-      item => item.title.toLowerCase().includes(query.toLowerCase()) || 
-              item.description.toLowerCase().includes(query.toLowerCase())
-    );
-    return res.json({
-      articles: filteredMock.length > 0 ? filteredMock : MOCK_NEWS_DATABASE,
-      fetchedFrom: 'Local Fallback (NEWS_API_AI_KEY Missing)',
-      secretLoaded: false
-    });
-  }
-
-  try {
-    const response = await axios.post(NEWS_API_URL, {
-      action: "getArticles",
-      lang: "eng",
-      keyword: query,
-      articlesCount: 15,
-      articlesSortBy: "date",
-      articlesSortByAsc: false,
-      apiKey: apiKey
-    }, {
-      headers: { 'Content-Type': 'application/json' },
-      timeout: 8000
-    });
-
-    const results = response.data?.articles?.results || [];
-    const mapped = mapExternalArticles(results, 'General');
-
-    res.json({
-      articles: mapped,
-      fetchedFrom: 'Real NewsAPI.ai Service via Secure Proxy',
-      secretLoaded: true
-    });
-  } catch (error: any) {
-    console.error('Error searching news:', error.message);
-    const filteredMock = MOCK_NEWS_DATABASE.filter(
-      item => item.title.toLowerCase().includes(query.toLowerCase()) || 
-              item.description.toLowerCase().includes(query.toLowerCase())
-    );
-    res.json({
-      articles: filteredMock,
-      fetchedFrom: `Local Fallback (Network error: ${error.message})`,
-      secretLoaded: true
-    });
-  }
-});
-
-export default app;
+// Enable CORS utility for Vercel Serverless Functions
+export function setCorsHeaders(res: any) {
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+  );
+}

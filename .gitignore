@@ -33,3 +33,4 @@ age-key.txt
 # Local OS files
 .DS_Store
 Thumbs.db
+.vercel
