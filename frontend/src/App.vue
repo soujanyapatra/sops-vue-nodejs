@@ -6,7 +6,7 @@
         <div class="d-flex align-center justify-space-between w-100 pr-4">
           <div class="d-flex align-center">
             <v-icon color="indigo-lighten-3" class="mr-2" size="26">mdi-newspaper-variant-outline</v-icon>
-            <span class="navbar-brand">The Chronicle</span>
+            <span class="navbar-brand">{{ projectName }}</span>
           </div>
           <div class="text-caption text-medium-emphasis font-sans font-weight-bold d-none d-sm-block uppercase tracking-wider">
             {{ todayDate }}
@@ -27,7 +27,7 @@
     <!-- Footer -->
     <v-footer border class="py-6 text-center justify-center bg-slate-950 text-caption text-medium-emphasis">
       <div class="d-flex flex-column align-center gap-1 font-sans">
-        <div>© 2026 The Chronicle News Portal. All rights reserved.</div>
+        <div>© 2026 {{ projectName }} News Portal. All rights reserved.</div>
         <div class="text-caption text-slate-500">
           Independent world journalism, technology reports, and business analysis.
         </div>
@@ -37,6 +37,12 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
+
+const projectName = computed(() => {
+  return import.meta.env.VITE_PROJECT_NAME || 'The Chronicle';
+});
+
 const todayDate = new Date().toLocaleDateString('en-US', {
   weekday: 'long',
   year: 'numeric',
