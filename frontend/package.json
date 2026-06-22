@@ -14,8 +14,8 @@
     "@mdi/font": "^7.4.47",
     "axios": "^1.18.0",
     "vue": "^3.5.34",
-    "vue-router": "^5.1.0",
-    "vuetify": "^4.1.2"
+    "vue-router": "^4.6.4",
+    "vuetify": "^3.12.8"
   },
   "devDependencies": {
     "@rolldown/binding-linux-x64-gnu": "^1.1.2",
@@ -25,9 +25,9 @@
     "@vue/tsconfig": "^0.9.1",
     "happy-dom": "^20.10.6",
     "jsdom": "^29.1.1",
-    "typescript": "~6.0.2",
+    "typescript": "^5.9.3",
     "vite": "^5.4.21",
     "vitest": "^1.6.0",
-    "vue-tsc": "^3.2.8"
+    "vue-tsc": "^2.2.12"
   }
 }
