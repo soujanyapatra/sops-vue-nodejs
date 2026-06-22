@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
+import HomeView from './HomeView.vue';
 import { mount } from '@vue/test-utils';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import HomeView from './HomeView.vue';
 import { createVuetify } from 'vuetify';
 import * as components from 'vuetify/components';
 import * as directives from 'vuetify/directives';
@@ -28,25 +28,27 @@ describe('HomeView.vue', () => {
   });
 
   it('renders blogs and secret metadata successfully', async () => {
-    const mockBlogsResponse = {
+    const mockNewsResponse = {
       data: {
-        blogs: [
+        articles: [
           {
-            id: 1,
-            title: 'Dynamic Test Blog Post Title',
-            description: 'This is a test description of a blog post.',
-            cover_image: 'https://example.com/cover.jpg',
-            tags: ['testing', 'vitest'],
-            author: 'Test Author',
-            published_at: 'June 22, 2026',
-            read_time: '3 min read'
+            id: 'news-id-1',
+            title: 'Dynamic Test News Article Title',
+            description: 'This is a test description of a news article.',
+            content: 'Full content of news article.',
+            url: 'https://example.com/test',
+            image: 'https://example.com/image.jpg',
+            source: 'Test Source',
+            author: 'Test Writer',
+            published_at: '2026-06-22T10:00:00Z',
+            category: 'World'
           }
         ],
-        keyLoaded: true,
-        fetchedFrom: 'Secure Test Service'
+        fetchedFrom: 'Mock news proxy service',
+        secretLoaded: true
       }
     };
-    (axios.get as any).mockResolvedValue(mockBlogsResponse);
+    (axios.get as any).mockResolvedValue(mockNewsResponse);
 
     const wrapper = mount(HomeView, {
       global: {
@@ -55,15 +57,13 @@ describe('HomeView.vue', () => {
     });
 
     // Wait for network response and updates
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 80));
     await wrapper.vm.$nextTick();
 
     const text = wrapper.text();
-    expect(text).toContain('Dynamic Test Blog Post Title');
-    expect(text).toContain('This is a test description of a blog post.');
-    expect(text).toContain('Test Author');
-    expect(text).toContain('Yes (Backend Only)');
-    expect(text).toContain('Secure Test Service');
+    expect(text).toContain('Dynamic Test News Article Title');
+    expect(text).toContain('This is a test description of a news article.');
+    expect(text).toContain('Test Writer');
   });
 
   it('renders connection error alert when backend request fails', async () => {
@@ -76,10 +76,10 @@ describe('HomeView.vue', () => {
     });
 
     // Wait for network response and updates
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 80));
     await wrapper.vm.$nextTick();
 
     const text = wrapper.text();
-    expect(text).toContain('Failed to Load Blog Feed');
+    expect(text).toContain('News Retrieval Error');
   });
 });

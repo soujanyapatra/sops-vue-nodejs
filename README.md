@@ -143,6 +143,7 @@ Create your local plaintext config file in `secrets/secrets.yaml`:
 ```yaml
 API_KEY: super-secret-demo-key
 ENVIRONMENT: development
+NEWS_API_AI_KEY: 9bcf2d37-8a60-4e80-b776-04c3cced79c9
 ```
 
 ### 5. Encrypt Secrets

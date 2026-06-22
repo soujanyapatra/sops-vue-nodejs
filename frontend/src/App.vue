@@ -1,39 +1,19 @@
 <template>
   <v-app id="app">
-    <!-- App Bar -->
-    <v-app-bar flat border color="background" class="px-md-4">
-      <v-app-bar-title class="font-weight-bold d-flex align-center">
-        <v-icon color="primary" class="mr-2">mdi-shield-lock-open-outline</v-icon>
-        <span>DevSecOps Secret Demo</span>
+    <!-- Premium Editorial App Bar -->
+    <v-app-bar flat color="transparent" class="px-md-4 custom-app-bar">
+      <v-app-bar-title>
+        <div class="d-flex align-center justify-space-between w-100 pr-4">
+          <div class="d-flex align-center">
+            <v-icon color="indigo-lighten-3" class="mr-2" size="26">mdi-newspaper-variant-outline</v-icon>
+            <span class="navbar-brand">The Chronicle</span>
+          </div>
+          <div class="text-caption text-medium-emphasis font-sans font-weight-bold d-none d-sm-block uppercase tracking-wider">
+            {{ todayDate }}
+          </div>
+        </div>
       </v-app-bar-title>
-
-      <v-spacer></v-spacer>
-
-      <!-- Navigation buttons for larger screens -->
-      <div class="d-none d-sm-flex gap-2">
-        <v-btn to="/" prepend-icon="mdi-home-outline" variant="text" class="text-capitalize">
-          Home
-        </v-btn>
-        <v-btn to="/secret-status" prepend-icon="mdi-shield-check-outline" variant="text" class="text-capitalize">
-          Secret Status
-        </v-btn>
-        <v-btn to="/pipeline" prepend-icon="mdi-git" variant="text" class="text-capitalize">
-          CI/CD Pipeline
-        </v-btn>
-      </div>
-
-      <!-- Mobile menu button -->
-      <v-btn icon="mdi-menu" class="d-flex d-sm-none" @click="drawer = !drawer"></v-btn>
     </v-app-bar>
-
-    <!-- Navigation Drawer for Mobile -->
-    <v-navigation-drawer v-model="drawer" temporary color="background">
-      <v-list>
-        <v-list-item to="/" prepend-icon="mdi-home-outline" title="Home"></v-list-item>
-        <v-list-item to="/secret-status" prepend-icon="mdi-shield-check-outline" title="Secret Status"></v-list-item>
-        <v-list-item to="/pipeline" prepend-icon="mdi-git" title="CI/CD Pipeline"></v-list-item>
-      </v-list>
-    </v-navigation-drawer>
 
     <!-- Main Content Area -->
     <v-main>
@@ -45,32 +25,55 @@
     </v-main>
 
     <!-- Footer -->
-    <v-footer border class="py-4 text-center justify-center bg-slate-950 text-caption text-medium-emphasis">
-      <span>
-        Secure DevSecOps Management Demo • SOPS + AGE + GitHub Actions • Build 1.0.0
-      </span>
+    <v-footer border class="py-6 text-center justify-center bg-slate-950 text-caption text-medium-emphasis">
+      <div class="d-flex flex-column align-center gap-1 font-sans">
+        <div>© 2026 The Chronicle News Portal. All rights reserved.</div>
+        <div class="text-caption text-slate-500">
+          Independent world journalism, technology reports, and business analysis.
+        </div>
+      </div>
     </v-footer>
   </v-app>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-
-const drawer = ref(false);
+const todayDate = new Date().toLocaleDateString('en-US', {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric'
+});
 </script>
 
 <style>
 /* Global styles and page transitions */
 #app {
-  background-color: #0f172a !important; /* Force slate-900 background */
+  background-color: #080c14 !important; /* Force deep dark theme background */
+  font-family: 'Inter', sans-serif !important;
+}
+
+.custom-app-bar {
+  background: rgba(8, 12, 20, 0.75) !important;
+  backdrop-filter: blur(16px) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.navbar-brand {
+  font-family: 'Lora', Georgia, serif !important;
+  font-weight: 800 !important;
+  font-size: 1.55rem !important;
+  letter-spacing: -0.01em !important;
+  background: linear-gradient(135deg, #ffffff 30%, #a5b4fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .bg-slate-950 {
-  background-color: #020617 !important;
+  background-color: #030712 !important;
 }
 
-.gap-2 {
-  gap: 8px;
+.gap-1 {
+  gap: 4px;
 }
 
 /* Route transitions */
