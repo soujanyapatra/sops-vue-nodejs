@@ -311,7 +311,7 @@ const visibleCount = ref(6);
 
 const fetchTrendingNews = async () => {
   try {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    const apiUrl = import.meta.env.VITE_API_URL;
     const response = await axios.get<NewsResponse>(`${apiUrl}/api/news/trending`);
     trendingArticles.value = response.data.articles;
   } catch (err) {
@@ -323,7 +323,7 @@ const fetchCategoryNews = async (category: string) => {
   loading.value = true;
   error.value = false;
   try {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    const apiUrl = import.meta.env.VITE_API_URL;
     const response = await axios.get<NewsResponse>(`${apiUrl}/api/news?category=${category}`);
     feedArticles.value = response.data.articles;
   } catch (err) {
@@ -350,7 +350,7 @@ const handleSearch = async () => {
   visibleCount.value = 6;
 
   try {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    const apiUrl = import.meta.env.VITE_API_URL;
     const response = await axios.get<NewsResponse>(`${apiUrl}/api/news/search`, {
       params: { q: activeSearchQuery.value }
     });

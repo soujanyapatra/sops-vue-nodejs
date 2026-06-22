@@ -40,7 +40,7 @@
 import { computed } from 'vue';
 
 const projectName = computed(() => {
-  return import.meta.env.VITE_PROJECT_NAME || 'The Chronicle';
+  return import.meta.env.VITE_PROJECT_NAME;
 });
 
 const todayDate = new Date().toLocaleDateString('en-US', {
