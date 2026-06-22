@@ -138,10 +138,10 @@ creation_rules:
 ```
 
 ### 4. Configure Local Environment Variables
-For local development, create a `.env` file in the **project root directory**:
+For local development, copy the `.env.example` file to `.env` in the **project root directory** and add your keys:
 ```env
 VITE_API_URL='http://localhost:3000'
-NEWS_API_AI_KEY=9bcf2d37-8a60-4e80-b776-04c3cced79c9
+NEWS_API_AI_KEY=your_newsapi_ai_key_here
 PORT=3000
 ENVIRONMENT=development
 ```
@@ -152,7 +152,7 @@ Create your plaintext production config file in `secrets/secrets.yaml`:
 ```yaml
 API_KEY: super-secret-demo-key
 ENVIRONMENT: production
-NEWS_API_AI_KEY: 9bcf2d37-8a60-4e80-b776-04c3cced79c9
+NEWS_API_AI_KEY: your_newsapi_ai_key_here
 ```
 Then encrypt it:
 ```bash
