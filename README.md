@@ -1,6 +1,6 @@
 # The Chronicle - World & Technology News Portal (SOPS + AGE + GitHub Actions Demo)
 
-A production-quality, full-stack world and technology news portal named **The Chronicle** that demonstrates secure secret isolation. The API credentials are encrypted in Git via SOPS/AGE, decrypted during automated CI/CD runs, and consumed by a Node.js Express backend proxy without ever leaking to the client-side Vue 3 application.
+A production-quality, serverless world and technology news portal named **The Chronicle** that demonstrates secure secret isolation. The API credentials are encrypted in Git via SOPS/AGE, decrypted during automated CI/CD runs, and consumed by native **Vercel Serverless Functions** without ever leaking to the client-side Vue 3 application.
 
 ---
 
@@ -24,14 +24,13 @@ graph TD
     subgraph "CI/CD Runner (GitHub Actions)"
         GitRepo -->|"4. Trigger workflow"| GHA["GitHub Actions"]
         GHAKey["GitHub Secret: AGE_PRIVATE_KEY"] -->|"5. Restore Private Key"| GHA
-        GHA -->|"6. SOPS Decrypt"| DecEnv["backend/.env"]
+        GHA -->|"6. SOPS Decrypt"| DecEnv[".env"]
         GHA -->|"7. Run Tests and Lint"| Build["Compile TS and Bundle Vue"]
     end
 
-    subgraph "Cloud Deployment"
-        Build -->|"8. Deploy FE"| Hosting["Production Frontend"]
-        Build -->|"9. Deploy BE Proxy"| APIProxy["Production Backend"]
-        Hosting -->|"10. Secure API Proxy Requests"| APIProxy
+    subgraph "Vercel Platform"
+        Build -->|"8. Deploy to Vercel"| Vercel["Unified Frontend & API Functions"]
+        Vercel -->|"9. Secure API Requests"| VercelServerless["Serverless Function Proxy"]
     end
 
     classDef secure fill:#065f46,stroke:#34d399,stroke-width:2px,color:#fff;
@@ -70,15 +69,16 @@ project-root/
 ├── .github/
 │   └── workflows/
 │       └── deploy.yml      # CI/CD pipeline configuration
-├── backend/
-│   ├── src/                # Express TypeScript source code
-│   │   ├── app.ts          # Core application & news proxies
-│   │   ├── index.ts        # Server entry point
-│   │   └── app.test.ts     # Jest backend integration tests
-│   ├── Dockerfile          # Production backend Docker configuration
-│   ├── jest.config.js      # Jest config
-│   ├── tsconfig.json       # Backend TypeScript config
-│   └── package.json        # Backend dependencies & scripts
+├── api/
+│   ├── _utils/
+│   │   └── news.ts         # Shared news types, mock database & utilities
+│   ├── categories.ts       # Serverless function: categories API
+│   ├── health.ts           # Serverless function: health API
+│   ├── news.ts             # Serverless function: category news proxy API
+│   ├── secret-status.ts    # Serverless function: secret metadata API
+│   └── news/
+│       ├── search.ts       # Serverless function: news search API
+│       └── trending.ts     # Serverless function: trending news API
 ├── frontend/
 │   ├── src/
 │   │   ├── plugins/
@@ -89,7 +89,6 @@ project-root/
 │   │   │   └── HomeView.vue # Combined single-page news portal
 │   │   ├── App.vue         # Main layout shell with custom navbar
 │   │   └── main.ts         # Vue entry point
-│   ├── Dockerfile          # Frontend Nginx Docker configuration
 │   ├── vite.config.ts      # Vite & Vitest config
 │   ├── tsconfig.json       # Frontend TypeScript config
 │   └── package.json        # Frontend dependencies & scripts
@@ -100,7 +99,7 @@ project-root/
 ├── .gitignore              # Protects secrets.yaml, age-key.txt, and .env
 ├── .env                    # Local environment config (never committed!)
 ├── .sops.yaml              # SOPS encryption mapping configuration
-├── docker-compose.yml      # Multi-container local execution setup
+├── vercel.json             # Vercel deployment routes and build settings
 ├── package.json            # Root workspace scripts (orchestrator)
 └── README.md               # Main project documentation
 ```
@@ -140,12 +139,11 @@ creation_rules:
 ### 4. Configure Local Environment Variables
 For local development, copy the `.env.example` file to `.env` in the **project root directory** and add your keys:
 ```env
-VITE_API_URL='http://localhost:3000'
 NEWS_API_AI_KEY=your_newsapi_ai_key_here
-PORT=3000
 ENVIRONMENT=development
+VITE_PROJECT_NAME='The Chronicle'
 ```
-*(This file is blocked by `.gitignore` and won't be committed to Git).*
+*(This file is blocked by `.gitignore` and won't be committed to Git. VITE_API_URL can be omitted or left empty since the frontend and functions share the same origin port).*
 
 ### 5. Encrypt Secrets (For Production/Server Use)
 Create your plaintext production config file in `secrets/secrets.yaml`:
@@ -163,36 +161,19 @@ Verify that `secrets.enc.yaml` contains encrypted values and metadata blocks.
 ### 6. Run the Application Locally
 Install all dependencies and run dev servers:
 ```bash
-# Install root, frontend, and backend packages
+# Install root and frontend packages
 npm run install-all
 
-# Boot development mode (runs backend on port 3000, frontend on port 5173/vite)
+# Boot development mode (runs Vercel dev gateway proxying frontend and serverless routes)
 npm run dev
 ```
+The application will be available at `http://localhost:3000`.
 
 ### 7. Run All Test Suites
-Verify all backend Jest integration tests and frontend component tests:
+Verify all frontend component and dashboard tests:
 ```bash
 npm run test
 ```
-
----
-
-## 🐳 Docker Compose Local Testing
-
-To test the full containerized stack locally matching production topologies:
-
-1. Decrypt the secrets to the backend directory:
-   ```bash
-   SOPS_AGE_KEY_FILE=age-key.txt bin/sops --decrypt secrets/secrets.enc.yaml > backend/.env
-   ```
-2. Build and launch containers:
-   ```bash
-   docker compose up --build
-   ```
-3. Access the services:
-   - **Frontend UI**: `http://localhost:8080`
-   - **Backend API**: `http://localhost:3000/api/health`
 
 ---
 
@@ -200,9 +181,12 @@ To test the full containerized stack locally matching production topologies:
 
 To configure the deployment pipeline:
 1. Go to your GitHub repository -> **Settings** -> **Secrets and variables** -> **Actions**.
-2. Click **New repository secret**.
-3. Create a secret named **`AGE_PRIVATE_KEY`** and paste the raw content of your private key (from `age-key.txt`, e.g., `AGE-SECRET-KEY-1D37...`).
-4. Push your code (ensuring `.gitignore` blocks `.env`, `secrets.yaml`, and `age-key.txt`). The pipeline will run, restore the keys, decrypt `secrets.enc.yaml`, write `backend/.env`, and verify tests.
+2. Click **New repository secret** and add:
+   * **`AGE_PRIVATE_KEY`**: Paste the raw content of your private key (from `age-key.txt`, e.g., `AGE-SECRET-KEY-1D37...`).
+   * **`VERCEL_TOKEN`**: Your Vercel API token.
+   * **`VERCEL_ORG_ID`**: Your Vercel organization ID.
+   * **`VERCEL_PROJECT_ID`**: Your Vercel project ID.
+3. Push your code (ensuring `.gitignore` blocks `.env`, `secrets.yaml`, and `age-key.txt`). The pipeline will run, restore the keys, decrypt `secrets.enc.yaml` into `.env`, verify tests, and deploy directly to Vercel.
 
 ---
 
