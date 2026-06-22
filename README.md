@@ -10,28 +10,28 @@ The following diagram illustrates the lifecycle of secrets from local developmen
 
 ```mermaid
 graph TD
-    subgraph Local Developer Machine
-        Dev[Developer] -->|age-keygen| KeyPair[AGE Keys: public/private]
-        Dev -->|1. Create plain secrets| Sec[secrets/secrets.yaml]
-        Dev -->|2. SOPS Encrypt| EncSec[secrets/secrets.enc.yaml]
+    subgraph "Local Developer Machine"
+        Dev[Developer] -->|age-keygen| KeyPair["AGE Keys: public/private"]
+        Dev -->|"1. Create plain secrets"| Sec["secrets/secrets.yaml"]
+        Dev -->|"2. SOPS Encrypt"| EncSec["secrets/secrets.enc.yaml"]
     end
 
-    subgraph Version Control (GitHub)
-        EncSec -->|3. Commit encrypted yaml only| GitRepo[Git Repository]
-        GitIgnore[gitignore ignores secrets.yaml & age-key.txt]
+    subgraph "Version Control (GitHub)"
+        EncSec -->|"3. Commit encrypted yaml only"| GitRepo["Git Repository"]
+        GitIgnore["gitignore ignores secrets.yaml and age-key.txt"]
     end
 
-    subgraph CI/CD Runner (GitHub Actions)
-        GitRepo -->|4. Trigger workflow| GHA[GitHub Actions]
-        GHAKey[GitHub Secret: AGE_PRIVATE_KEY] -->|5. Restore Private Key| GHA
-        GHA -->|6. SOPS Decrypt| DecEnv[backend/.env]
-        GHA -->|7. Run Tests & Lint| Build[Compile TS & Bundle Vue]
+    subgraph "CI/CD Runner (GitHub Actions)"
+        GitRepo -->|"4. Trigger workflow"| GHA["GitHub Actions"]
+        GHAKey["GitHub Secret: AGE_PRIVATE_KEY"] -->|"5. Restore Private Key"| GHA
+        GHA -->|"6. SOPS Decrypt"| DecEnv["backend/.env"]
+        GHA -->|"7. Run Tests and Lint"| Build["Compile TS and Bundle Vue"]
     end
 
-    subgraph Cloud Deployment
-        Build -->|8. Deploy FE| Vercel[Vercel Frontend]
-        Build -->|9. Deploy BE| Railway[Railway/Render Backend]
-        Vercel -->|10. Call API: /api/secret-status| Railway
+    subgraph "Cloud Deployment"
+        Build -->|"8. Deploy FE"| Vercel["Vercel Frontend"]
+        Build -->|"9. Deploy BE"| Railway["Railway/Render Backend"]
+        Vercel -->|"10. Call API: /api/secret-status"| Railway
     end
 
     classDef secure fill:#065f46,stroke:#34d399,stroke-width:2px,color:#fff;
