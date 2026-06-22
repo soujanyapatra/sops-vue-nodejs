@@ -4,10 +4,10 @@
     <v-row class="mb-8">
       <v-col cols="12" class="text-center">
         <h1 class="text-h3 font-weight-bold mb-4 gradient-text">
-          Secret Loading Status
+          Environment Metadata
         </h1>
         <p class="text-subtitle-1 text-medium-emphasis max-width-600 mx-auto">
-          Verify runtime environment settings and encryption statuses fetched directly from the secure backend service.
+          Verify runtime environment settings and status fetched directly from the secure backend service.
         </p>
       </v-col>
     </v-row>
@@ -24,7 +24,7 @@
               <v-icon :color="status.secretLoaded ? 'success' : 'error'" class="mr-3 scale-up-down">
                 {{ status.secretLoaded ? 'mdi-shield-check' : 'mdi-shield-alert' }}
               </v-icon>
-              Decrypted Secret Environment
+              Decrypted Environment Values
             </span>
             <v-btn
               icon="mdi-refresh"
@@ -35,7 +35,7 @@
             ></v-btn>
           </v-card-title>
 
-          <v-divider></v-divider>
+          <v-divider class="border-slate-800"></v-divider>
 
           <v-card-text class="pa-6">
             <v-alert
@@ -100,27 +100,6 @@
                 </div>
               </v-col>
             </v-row>
-          </v-card-text>
-        </v-card>
-
-        <!-- Security Warning & Explanation Card -->
-        <v-card class="elevation-2 glass-card border-warning pa-6">
-          <v-card-title class="text-h6 font-weight-bold text-amber-lighten-2 d-flex align-center mb-3">
-            <v-icon color="warning" class="mr-2">mdi-shield-key-outline</v-icon>
-            Security Architecture & Zero Leakage Policy
-          </v-card-title>
-          <v-card-text class="text-medium-emphasis">
-            <p class="mb-4">
-              <strong>Why you do not see the actual API Key:</strong> Under secure DevSecOps practices, 
-              private credentials should <strong>never</strong> reach the client's browser. If we used 
-              <code>VITE_SECRET_KEY</code> or passed the key directly in the API response, any user could inspect 
-              the source code, network tabs, or browser memory and extract the key.
-            </p>
-            <p class="mb-0">
-              Instead, the backend service uses Mozilla SOPS to decrypt the secret <code>secrets.enc.yaml</code> 
-              on the secure CI/CD server, binds it to <code>process.env.API_KEY</code> at runtime, and exposes only 
-              a Boolean state confirmation via this API endpoint.
-            </p>
           </v-card-text>
         </v-card>
       </v-col>
@@ -195,10 +174,6 @@ onMounted(() => {
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   border-radius: 16px !important;
-}
-
-.border-warning {
-  border: 1px solid rgba(245, 158, 11, 0.3) !important;
 }
 
 .bg-slate-900 {

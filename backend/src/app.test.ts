@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import request from 'supertest';
 import app from './app';
 
@@ -44,5 +44,18 @@ describe('Backend API Endpoints', () => {
     
     // Ensure the key itself is not leaked
     expect(JSON.stringify(res.body)).not.toContain('test-api-key');
+  });
+
+  it('GET /api/blogs should return blog feed and check BLOG_API_KEY presence', async () => {
+    process.env.BLOG_API_KEY = 'mock-blog-key';
+    const res = await request(app).get('/api/blogs');
+    expect(res.status).toBe(200);
+    expect(res.body.blogs).toBeInstanceOf(Array);
+    expect(res.body.blogs.length).toBeGreaterThan(0);
+    expect(res.body.keyLoaded).toBe(true);
+    expect(res.body.fetchedFrom).toBe('Secure Third-Party Blog Service (Backend Injected)');
+    
+    // Ensure the key itself is not leaked
+    expect(JSON.stringify(res.body)).not.toContain('mock-blog-key');
   });
 });
