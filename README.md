@@ -1,6 +1,6 @@
-# Secure DevSecOps Secret Management Demo (SOPS + AGE + GitHub Actions)
+# The Chronicle - World & Technology News Portal (SOPS + AGE + GitHub Actions Demo)
 
-A complete production-quality, full-stack demonstration project showing how secrets can be stored encrypted in Git, decrypted safely during CI/CD, and used by a Node.js Express backend without ever exposing them to the client-side Vue 3 application.
+A production-quality, full-stack world and technology news portal named **The Chronicle** that demonstrates secure secret isolation. The API credentials are encrypted in Git via SOPS/AGE, decrypted during automated CI/CD runs, and consumed by a Node.js Express backend proxy without ever leaking to the client-side Vue 3 application.
 
 ---
 
@@ -12,13 +12,13 @@ The following diagram illustrates the lifecycle of secrets from local developmen
 graph TD
     subgraph "Local Developer Machine"
         Dev[Developer] -->|age-keygen| KeyPair["AGE Keys: public/private"]
-        Dev -->|"1. Create plain secrets"| Sec["secrets/secrets.yaml"]
-        Dev -->|"2. SOPS Encrypt"| EncSec["secrets/secrets.enc.yaml"]
+        Dev -->|"1. Set plain keys in root .env"| Sec[".env (ignored)"]
+        Dev -->|"2. SOPS Encrypt to"| EncSec["secrets/secrets.enc.yaml"]
     end
 
     subgraph "Version Control (GitHub)"
         EncSec -->|"3. Commit encrypted yaml only"| GitRepo["Git Repository"]
-        GitIgnore["gitignore ignores secrets.yaml and age-key.txt"]
+        GitIgnore["gitignore ignores .env and age-key.txt"]
     end
 
     subgraph "CI/CD Runner (GitHub Actions)"
@@ -29,9 +29,9 @@ graph TD
     end
 
     subgraph "Cloud Deployment"
-        Build -->|"8. Deploy FE"| Vercel["Vercel Frontend"]
-        Build -->|"9. Deploy BE"| Railway["Railway/Render Backend"]
-        Vercel -->|"10. Call API: /api/secret-status"| Railway
+        Build -->|"8. Deploy FE"| Hosting["Production Frontend"]
+        Build -->|"9. Deploy BE Proxy"| APIProxy["Production Backend"]
+        Hosting -->|"10. Secure API Proxy Requests"| APIProxy
     end
 
     classDef secure fill:#065f46,stroke:#34d399,stroke-width:2px,color:#fff;
@@ -72,7 +72,7 @@ project-root/
 │       └── deploy.yml      # CI/CD pipeline configuration
 ├── backend/
 │   ├── src/                # Express TypeScript source code
-│   │   ├── app.ts          # Core application & routing
+│   │   ├── app.ts          # Core application & news proxies
 │   │   ├── index.ts        # Server entry point
 │   │   └── app.test.ts     # Jest backend integration tests
 │   ├── Dockerfile          # Production backend Docker configuration
@@ -84,14 +84,12 @@ project-root/
 │   │   ├── plugins/
 │   │   │   └── vuetify.ts  # Vuetify config & design styling
 │   │   ├── router/
-│   │   │   └── index.ts    # Frontend routing definitions
-│   │   ├── views/          # Views: Home, SecretStatus, Pipeline
-│   │   │   ├── HomeView.vue
-│   │   │   ├── SecretStatusView.vue
-│   │   │   └── PipelineView.vue
-│   │   ├── App.vue         # Main layout shell
+│   │   │   └── index.ts    # Frontend single-route definition
+│   │   ├── views/          # Views
+│   │   │   └── HomeView.vue # Combined single-page news portal
+│   │   ├── App.vue         # Main layout shell with custom navbar
 │   │   └── main.ts         # Vue entry point
-│   ├── Dockerfile          # Frontend SPA Nginx Docker configuration
+│   ├── Dockerfile          # Frontend Nginx Docker configuration
 │   ├── vite.config.ts      # Vite & Vitest config
 │   ├── tsconfig.json       # Frontend TypeScript config
 │   └── package.json        # Frontend dependencies & scripts
@@ -100,6 +98,7 @@ project-root/
 │   └── secrets.enc.yaml    # Encrypted secrets (safe to commit to Git)
 ├── bin/                    # Downloaded SOPS & AGE binaries (local only)
 ├── .gitignore              # Protects secrets.yaml, age-key.txt, and .env
+├── .env                    # Local environment config (never committed!)
 ├── .sops.yaml              # SOPS encryption mapping configuration
 ├── docker-compose.yml      # Multi-container local execution setup
 ├── package.json            # Root workspace scripts (orchestrator)
@@ -138,28 +137,30 @@ creation_rules:
     age: <your-public-key-here>
 ```
 
-### 4. Create Secrets
-Create your local plaintext config file in `secrets/secrets.yaml`:
+### 4. Configure Local Environment Variables
+For local development, create a `.env` file in the **project root directory**:
+```env
+VITE_API_URL='http://localhost:3000'
+NEWS_API_AI_KEY=9bcf2d37-8a60-4e80-b776-04c3cced79c9
+PORT=3000
+ENVIRONMENT=development
+```
+*(This file is blocked by `.gitignore` and won't be committed to Git).*
+
+### 5. Encrypt Secrets (For Production/Server Use)
+Create your plaintext production config file in `secrets/secrets.yaml`:
 ```yaml
 API_KEY: super-secret-demo-key
-ENVIRONMENT: development
+ENVIRONMENT: production
 NEWS_API_AI_KEY: 9bcf2d37-8a60-4e80-b776-04c3cced79c9
 ```
-
-### 5. Encrypt Secrets
+Then encrypt it:
 ```bash
 bin/sops --encrypt secrets/secrets.yaml > secrets/secrets.enc.yaml
 ```
 Verify that `secrets.enc.yaml` contains encrypted values and metadata blocks.
 
-### 6. Decrypt Secrets (Generate `.env` for Development)
-To run local development servers, decrypt the configuration into a `.env` file:
-```bash
-SOPS_AGE_KEY_FILE=age-key.txt bin/sops --decrypt secrets/secrets.enc.yaml > backend/.env
-```
-*(Alternatively, you can run: `SOPS_AGE_KEY="<private-key-string>" bin/sops --decrypt secrets/secrets.enc.yaml > backend/.env`)*
-
-### 7. Run the Application Locally
+### 6. Run the Application Locally
 Install all dependencies and run dev servers:
 ```bash
 # Install root, frontend, and backend packages
@@ -169,7 +170,7 @@ npm run install-all
 npm run dev
 ```
 
-### 8. Run All Test Suites
+### 7. Run All Test Suites
 Verify all backend Jest integration tests and frontend component tests:
 ```bash
 npm run test
@@ -201,8 +202,7 @@ To configure the deployment pipeline:
 1. Go to your GitHub repository -> **Settings** -> **Secrets and variables** -> **Actions**.
 2. Click **New repository secret**.
 3. Create a secret named **`AGE_PRIVATE_KEY`** and paste the raw content of your private key (from `age-key.txt`, e.g., `AGE-SECRET-KEY-1D37...`).
-4. (Optional) Create a secret named **`VERCEL_TOKEN`** for frontend hosting deployments.
-5. Push your code (ensuring `.gitignore` blocks `secrets.yaml` and `age-key.txt`). The pipeline will run, restore the keys, decrypt `secrets.enc.yaml`, write `backend/.env`, and verify tests.
+4. Push your code (ensuring `.gitignore` blocks `.env`, `secrets.yaml`, and `age-key.txt`). The pipeline will run, restore the keys, decrypt `secrets.enc.yaml`, write `backend/.env`, and verify tests.
 
 ---
 
@@ -212,7 +212,7 @@ To configure the deployment pipeline:
   *Fix:* Double check that `age-key.txt` is listed in your root `.gitignore` before initializing Git.
 - **Mistake: Committing the decrypted `.env` file.**
   *Fix:* Ensure `.env` is explicitly ignored at the root and folder level.
-- **Mistake: Exposing `process.env.API_KEY` directly to the client.**
-  *Fix:* Never create endpoints like `GET /api/get-keys` that return plain values. Only return structural states (e.g. `secretLoaded: true`).
-- **Mistake: Using frontend environment variables (`VITE_API_KEY`) for backend API secrets.**
+- **Mistake: Exposing `process.env.NEWS_API_AI_KEY` directly to the client.**
+  *Fix:* Never create endpoints like `GET /api/get-keys` that return plain values. Keep all raw keys hidden on the backend.
+- **Mistake: Using frontend environment variables (`VITE_NEWS_API_KEY`) for backend API secrets.**
   *Fix:* Vite bundles variables starting with `VITE_` directly into the client-side JavaScript, rendering them viewable to anyone using browser inspector tools. Keep all master credentials on the backend.
