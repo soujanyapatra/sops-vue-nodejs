@@ -49,6 +49,8 @@ const todayDate = new Date().toLocaleDateString('en-US', {
   month: 'long',
   day: 'numeric'
 });
+
+console.log('test for build')
 </script>
 
 <style>
