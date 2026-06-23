@@ -63,6 +63,12 @@ jobs:
             exit 1
           fi
 
+      # Step 6b: Parse and export environment variables safely to GITHUB_ENV
+      - name: Export Secrets to Environment
+        run: |
+          echo "Parsing and exporting environment variables..."
+          node scripts/parse-env.js
+
       # Step 7: Install package dependencies
       - name: Install Dependencies
         run: |
@@ -94,11 +100,6 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          echo "Extracting secrets from decrypted .env..."
-          NEWS_API_AI_KEY=$(grep '^NEWS_API_AI_KEY=' .env | cut -d '=' -f2- | tr -d "'\"")
-          API_KEY=$(grep '^API_KEY=' .env | cut -d '=' -f2- | tr -d "'\"")
-          ENVIRONMENT=$(grep '^ENVIRONMENT=' .env | cut -d '=' -f2- | tr -d "'\"")
-
           echo "Configuring Vercel Environment Variables..."
           npx vercel env rm NEWS_API_AI_KEY --yes --token=$VERCEL_TOKEN || true
           npx vercel env rm API_KEY --yes --token=$VERCEL_TOKEN || true
@@ -110,6 +111,7 @@ jobs:
 
           echo "Deploying to Vercel..."
           npx vercel --prod --token=$VERCEL_TOKEN --yes --build-env VITE_PROJECT_NAME="The Chronicle"
+
 
 
 
