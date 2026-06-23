@@ -94,10 +94,23 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          echo "Deploying to Vercel..."
-          # Extract NEWS_API_AI_KEY from the decrypted .env file
+          echo "Extracting secrets from decrypted .env..."
           NEWS_API_AI_KEY=$(grep '^NEWS_API_AI_KEY=' .env | cut -d '=' -f2- | tr -d "'\"")
-          npx vercel --prod --token=$VERCEL_TOKEN --yes --env NEWS_API_AI_KEY="$NEWS_API_AI_KEY" --build-env VITE_PROJECT_NAME="The Chronicle"
+          API_KEY=$(grep '^API_KEY=' .env | cut -d '=' -f2- | tr -d "'\"")
+          ENVIRONMENT=$(grep '^ENVIRONMENT=' .env | cut -d '=' -f2- | tr -d "'\"")
+
+          echo "Configuring Vercel Environment Variables..."
+          npx vercel env rm NEWS_API_AI_KEY --yes --token=$VERCEL_TOKEN || true
+          npx vercel env rm API_KEY --yes --token=$VERCEL_TOKEN || true
+          npx vercel env rm ENVIRONMENT --yes --token=$VERCEL_TOKEN || true
+
+          npx vercel env add NEWS_API_AI_KEY production --value "$NEWS_API_AI_KEY" --token=$VERCEL_TOKEN --yes
+          npx vercel env add API_KEY production --value "$API_KEY" --token=$VERCEL_TOKEN --yes
+          npx vercel env add ENVIRONMENT production --value "$ENVIRONMENT" --token=$VERCEL_TOKEN --yes
+
+          echo "Deploying to Vercel..."
+          npx vercel --prod --token=$VERCEL_TOKEN --yes --build-env VITE_PROJECT_NAME="The Chronicle"
+
 
 
 
