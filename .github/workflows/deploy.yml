@@ -110,7 +110,7 @@ jobs:
           npx vercel env add ENVIRONMENT production --value "$ENVIRONMENT" --token=$VERCEL_TOKEN --yes
 
           echo "Deploying to Vercel..."
-          npx vercel --prod --token=$VERCEL_TOKEN --yes --build-env VITE_PROJECT_NAME="The Chronicle"
+          npx vercel --prod --token=$VERCEL_TOKEN --yes --build-env VITE_PROJECT_NAME="The Chronicles"
 
 
 
