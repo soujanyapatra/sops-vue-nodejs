@@ -101,7 +101,14 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
           echo "Configuring Vercel Environment Variables..."
-          node scripts/sync-vercel-env.js
+          npx vercel env rm NEWS_API_AI_KEY --yes --token=$VERCEL_TOKEN || true
+          npx vercel env rm API_KEY --yes --token=$VERCEL_TOKEN || true
+          npx vercel env rm ENVIRONMENT --yes --token=$VERCEL_TOKEN || true
+
+          npx vercel env add NEWS_API_AI_KEY production --value "$NEWS_API_AI_KEY" --token=$VERCEL_TOKEN --yes
+          npx vercel env add API_KEY production --value "$API_KEY" --token=$VERCEL_TOKEN --yes
+          npx vercel env add ENVIRONMENT production --value "$ENVIRONMENT" --token=$VERCEL_TOKEN --yes
+
 
           echo "Deploying to Vercel..."
           npx vercel --prod --token=$VERCEL_TOKEN --yes --build-env VITE_PROJECT_NAME="The Chronicles"
