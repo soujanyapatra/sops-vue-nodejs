@@ -6,6 +6,7 @@ import {
   MOCK_NEWS_DATABASE, 
   mapExternalArticles 
 } from './_utils/news';
+import { config } from './_utils/config';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   setCorsHeaders(res);
@@ -13,7 +14,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).end();
   }
 
-  const apiKey = process.env.NEWS_API_AI_KEY;
+  const apiKey = config.newsApiAiKey;
   const category = (req.query.category as string) || 'World';
 
   if (!apiKey) {

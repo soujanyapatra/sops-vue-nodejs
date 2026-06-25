@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { setCorsHeaders } from './_utils/news';
+import { config } from './_utils/config';
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
   setCorsHeaders(res);
@@ -7,11 +8,11 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).end();
   }
 
-  const apiKey = process.env.NEWS_API_AI_KEY;
-  const environment = process.env.ENVIRONMENT || 'development';
-  const buildVersion = process.env.BUILD_VERSION || '1.0.0';
-  const deploymentTime = process.env.DEPLOYMENT_TIME || new Date().toISOString();
-  const projectName = process.env.PROJECT_NAME || 'The Chronicle';
+  const apiKey = config.newsApiAiKey;
+  const environment = config.environment;
+  const buildVersion = config.buildVersion;
+  const deploymentTime = config.deploymentTime;
+  const projectName = config.projectName;
 
   return res.status(200).json({
     secretLoaded: typeof apiKey === 'string' && apiKey.length > 0,
