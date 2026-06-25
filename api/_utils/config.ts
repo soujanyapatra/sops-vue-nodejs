@@ -1,7 +1,13 @@
+const newsApiAiKey = process.env.NEWS_API_AI_KEY;
+const environment = process.env.ENVIRONMENT || 'development';
+const buildVersion = process.env.BUILD_VERSION || '1.0.0';
+const deploymentTime = process.env.DEPLOYMENT_TIME || new Date().toISOString();
+const projectName = process.env.PROJECT_NAME || 'The Chronicle';
+
 export const config = {
-  newsApiAiKey: process.env.NEWS_API_AI_KEY,
-  environment: process.env.ENVIRONMENT,
-  buildVersion: process.env.BUILD_VERSION,
-  deploymentTime: process.env.DEPLOYMENT_TIME,
-  projectName: process.env.PROJECT_NAME,
+  newsApiAiKey,
+  environment,
+  buildVersion,
+  deploymentTime,
+  projectName,
 };
