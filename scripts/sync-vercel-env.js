@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
 try {
   const envPath = path.join(process.cwd(), '.env');
@@ -8,13 +9,19 @@ try {
     process.exit(1);
   }
 
+  const vercelToken = process.env.VERCEL_TOKEN;
+  if (!vercelToken) {
+    console.error('VERCEL_TOKEN environment variable is required');
+    process.exit(1);
+  }
+
   const content = fs.readFileSync(envPath, 'utf8');
   
   // Regex to match "KEY: VALUE" or "KEY=VALUE"
   const regex = /^([A-Za-z0-9_-]+)\s*[:=]\s*(.*)/gm;
   let match;
-  let envData = '';
-  
+  let count = 0;
+
   while ((match = regex.exec(content)) !== null) {
     const key = match[1].trim();
     let val = match[2].trim().replace(/^['"]|['"]$/g, '');
@@ -24,19 +31,20 @@ try {
       continue;
     }
 
-    envData += `${key}=${val}\n`;
+    console.log(`Syncing ${key} to Vercel...`);
+    try {
+      execSync(`npx vercel env add ${key} production --value "${val.replace(/"/g, '\\"')}" --force --yes --token=${vercelToken}`, {
+        stdio: 'ignore'
+      });
+      count++;
+    } catch (cmdError) {
+      console.error(`Failed to sync variable ${key}`);
+      process.exit(1);
+    }
   }
 
-  if (process.env.GITHUB_ENV) {
-    fs.appendFileSync(process.env.GITHUB_ENV, envData);
-    console.log('Successfully exported variables to GITHUB_ENV.');
-  } else {
-    // If run locally, write to a new .env file in standard dotenv format
-    const dotenvPath = path.join(process.cwd(), '.env.decrypted');
-    fs.writeFileSync(dotenvPath, envData);
-    console.log(`Successfully wrote standard dotenv configuration to: .env.decrypted`);
-  }
+  console.log(`Successfully synced ${count} environment variables to Vercel.`);
 } catch (error) {
-  console.error('Failed to parse environment variables:', error.message);
+  console.error('Failed to sync environment variables to Vercel:', error.message);
   process.exit(1);
 }
