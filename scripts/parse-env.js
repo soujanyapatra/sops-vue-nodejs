@@ -30,8 +30,7 @@ try {
 
   if (process.env.GITHUB_ENV) {
     fs.appendFileSync(process.env.GITHUB_ENV, envData);
-    console.log('Successfully exported variables to GITHUB_ENV:');
-    keys.forEach(k => console.log(` - ${k}`));
+    console.log('Successfully exported variables to GITHUB_ENV.');
   } else {
     // If run locally, write to a new .env file in standard dotenv format
     const dotenvPath = path.join(process.cwd(), '.env.decrypted');
@@ -39,6 +38,6 @@ try {
     console.log(`Successfully wrote standard dotenv configuration to: .env.decrypted`);
   }
 } catch (error) {
-  console.error('Failed to parse environment variables:', error);
+  console.error('Failed to parse environment variables:', error.message);
   process.exit(1);
 }
